@@ -16,22 +16,36 @@ dependencies:
 
 ## Usage
 
+Your `.env` file:
 ```
 MY_VARIABLE=my-value
 ```
 
-
+In your application:
 ```crystal
 require "dotenv"
 
 Dotenv.load
 
+# Other File
+Dotenv.load ".env-other"
+
+# From IO
+Dotenv.load MemoryIo.new("VAR=test")
+
+# From Hash
+Dotenv.load({"VAR" => "test"})
+
+# A Hash is returned with the loaded variables
+hash = Dotenv.load
+
+puts hash["MY_VARIABLE"] # my-value
 puts ENV["MY_VARIABLE"] # my-value
 ```
 
 ## Contributing
 
-1. Fork it ( https://github.com/[your-github-name]/cr-dotenv/fork )
+1. Fork it ( https://github.com/gdotdesign/cr-dotenv/fork )
 2. Create your feature branch (git checkout -b my-new-feature)
 3. Commit your changes (git commit -am 'Add some feature')
 4. Push to the branch (git push origin my-new-feature)
