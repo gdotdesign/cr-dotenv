@@ -11,7 +11,7 @@ Add this to your application's `shard.yml`:
 
 ```yaml
 dependencies:
-  cr-dotenv:
+  dotenv:
     github: gdotdesign/cr-dotenv
 ```
 
