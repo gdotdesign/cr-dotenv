@@ -34,7 +34,7 @@ Dotenv.load
 Dotenv.load ".env-other"
 
 # From IO
-Dotenv.load MemoryIo.new("VAR=test")
+Dotenv.load MemoryIO.new("VAR=test")
 
 # From Hash
 Dotenv.load({"VAR" => "test"})
