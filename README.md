@@ -1,5 +1,7 @@
 # Dotenv
 
+[![Build Status](https://travis-ci.org/gdotdesign/cr-dotenv.svg?branch=master)](https://travis-ci.org/gdotdesign/cr-dotenv)
+
 Loads `.env` file.
 
 ## Installation
