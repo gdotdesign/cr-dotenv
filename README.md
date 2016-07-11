@@ -25,9 +25,10 @@ In your application:
 ```crystal
 require "dotenv"
 
+# Load deafult ".env" file
 Dotenv.load
 
-# Other File
+# Other file
 Dotenv.load ".env-other"
 
 # From IO
