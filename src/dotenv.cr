@@ -3,6 +3,10 @@ require "./dotenv/*"
 module Dotenv
   extend self
 
+  class FileMissing < Exception
+
+  end
+
   @@verbose = true
 
   def verbose=(value : Bool) : Bool
@@ -15,6 +19,7 @@ module Dotenv
     log "DOTENV - Could not open file: #{path}"
     {} of String => String
   end
+
 
   def load(io : IO) : Hash(String, String)
     hash = {} of String => String
@@ -29,6 +34,20 @@ module Dotenv
     hash.each do |key, value|
       ENV[key] = value
     end
+  end
+
+  def load!(path = ".env") : Hash(String, String)
+    load File.open(File.expand_path(path))
+  rescue ex
+    raise FileMissing.new("Missing file!")
+  end
+
+  def load!(io : IO) : Hash(String, String)
+    load(io)
+  end
+
+  def load!(hash : Hash(String, String))
+    load(hash)
   end
 
   private def handle_line(line, hash)
