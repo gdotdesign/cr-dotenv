@@ -38,9 +38,7 @@ Dotenv.load ".env-other"
 # use the bang verion of the load method:
 
 Dotenv.load!
-
 # or
-
 Dotenv.load! ".env-other"
 
 # From IO
@@ -67,3 +65,4 @@ puts ENV["MY_VARIABLE"] # my-value
 ## Contributors
 
 - [[gdotdesign]](https://github.com/[gdotdesign]) Gusztáv Szikszai - creator, maintainer
+- [[bonyiii]](https://github.com/[bonyiii]) 
