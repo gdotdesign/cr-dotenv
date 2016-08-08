@@ -38,7 +38,6 @@ Dotenv.load ".env-other"
 # missing dotenv file, to make this error
 # immediately obvious then use the bang 
 # verion of the load method:
-
 Dotenv.load!
 
 # or
