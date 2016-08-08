@@ -33,10 +33,11 @@ Dotenv.load
 # Other file
 Dotenv.load ".env-other"
 
-# From file with exceptions
-# If you want to stop in case of missing dotenv file
-# use the bang verion of the load method:
-
+# If you load env variable from file and
+# you want to raise execption in case of
+# missing dotenv file, to make this error
+# immediately obvious then use the bang 
+# verion of the load method:
 Dotenv.load!
 # or
 Dotenv.load! ".env-other"
