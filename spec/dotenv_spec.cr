@@ -25,6 +25,17 @@ describe Dotenv do
     File.delete ".test-env"
   end
 
+  context "Comment Lines and Empty Lines" do
+    File.write ".test-env", "# This is a comment\nVAR=Dude\n\n"
+
+    it "should ignore" do
+      hash = Dotenv.load ".test-env"
+      hash.should eq({ "VAR" => "Dude"})
+    end
+
+    File.delete ".test-env"
+  end
+
   context "From IO" do
     it "should load env" do
       io = MemoryIO.new "VAR2=test\nVAR3=other"

@@ -20,7 +20,13 @@ dependencies:
 
 Your `.env` file:
 ```
+# Comments can be included for context
+#
 MY_VARIABLE=my-value
+
+# Empty Lines are also ignore
+#
+ANOTHER_VAR=awesome-value
 ```
 
 In your application:
@@ -67,3 +73,4 @@ puts ENV["MY_VARIABLE"] # my-value
 
 - [[gdotdesign]](https://github.com/[gdotdesign]) Gusztáv Szikszai - creator, maintainer
 - [[bonyiii]](https://github.com/[bonyiii]) 
+- [[neovintage]](https://github.com/[neovintage]) Rimas Silkaitis

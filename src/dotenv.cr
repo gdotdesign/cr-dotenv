@@ -51,8 +51,10 @@ module Dotenv
   end
 
   private def handle_line(line, hash)
-    name, value = line.split("=")
-    hash[name.strip] = value.strip
+    if line !~ /\A\s*(?:#.*)?\z/
+      name, value = line.split("=")
+      hash[name.strip] = value.strip
+    end
   rescue ex
     log "DOTENV - Malformed line #{line}"
   end
