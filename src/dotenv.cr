@@ -4,7 +4,6 @@ module Dotenv
   extend self
 
   class FileMissing < Exception
-
   end
 
   @@verbose = true
@@ -20,7 +19,6 @@ module Dotenv
     {} of String => String
   end
 
-
   def load(io : IO) : Hash(String, String)
     hash = {} of String => String
     io.each_line do |line|
@@ -34,6 +32,7 @@ module Dotenv
     hash.each do |key, value|
       ENV[key] = value
     end
+    ENV
   end
 
   def load!(path = ".env") : Hash(String, String)

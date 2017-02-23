@@ -30,7 +30,7 @@ describe Dotenv do
 
     it "should ignore" do
       hash = Dotenv.load ".test-env"
-      hash.should eq({ "VAR" => "Dude"})
+      hash.should eq({"VAR" => "Dude"})
     end
 
     File.delete ".test-env"
@@ -38,7 +38,7 @@ describe Dotenv do
 
   context "From IO" do
     it "should load env" do
-      io = MemoryIO.new "VAR2=test\nVAR3=other"
+      io = IO::Memory.new "VAR2=test\nVAR3=other"
       hash = Dotenv.load io
       hash["VAR2"].should eq "test"
       hash["VAR3"].should eq "other"
@@ -97,7 +97,7 @@ describe Dotenv do
 
     context "From IO" do
       it "should load env" do
-        io = MemoryIO.new "VAR2=test\nVAR3=other"
+        io = IO::Memory.new "VAR2=test\nVAR3=other"
         hash = Dotenv.load! io
         hash["VAR2"].should eq "test"
         hash["VAR3"].should eq "other"
