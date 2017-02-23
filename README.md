@@ -73,4 +73,5 @@ puts ENV["MY_VARIABLE"] # my-value
 
 - [[gdotdesign]](https://github.com/[gdotdesign]) Gusztáv Szikszai - creator, maintainer
 - [[bonyiii]](https://github.com/[bonyiii]) 
+- [[kriskova]](https://github.com/kriskova)
 - [[neovintage]](https://github.com/[neovintage]) Rimas Silkaitis
