@@ -36,6 +36,17 @@ describe Dotenv do
     File.delete ".test-env"
   end
 
+  context "Values with special characters" do
+    File.write ".test-env", "VAR=postgres://foo@localhost:5432/bar?max_pool_size=10"
+
+    it "should allow `=` in values" do
+      hash = Dotenv.load ".test-env"
+      hash.should eq({"VAR" => "postgres://foo@localhost:5432/bar?max_pool_size=10"})
+    end
+
+    File.delete ".test-env"
+  end
+
   context "From IO" do
     it "should load env" do
       io = IO::Memory.new "VAR2=test\nVAR3=other"

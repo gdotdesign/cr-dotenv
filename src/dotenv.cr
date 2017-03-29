@@ -51,7 +51,7 @@ module Dotenv
 
   private def handle_line(line, hash)
     if line !~ /\A\s*(?:#.*)?\z/m
-      name, value = line.split("=")
+      name, value = line.split("=", 2)
       hash[name.strip] = value.strip
     end
   rescue ex
