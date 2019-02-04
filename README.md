@@ -6,7 +6,6 @@ Loads `.env` file.
 
 ## Installation
 
-
 Add this to your application's `shard.yml`:
 
 ```yaml
@@ -15,10 +14,10 @@ dependencies:
     github: gdotdesign/cr-dotenv
 ```
 
-
 ## Usage
 
 Your `.env` file:
+
 ```
 # Comments can be included for context
 #
@@ -30,6 +29,7 @@ ANOTHER_VAR=awesome-value
 ```
 
 In your application:
+
 ```crystal
 require "dotenv"
 
@@ -42,11 +42,16 @@ Dotenv.load ".env-other"
 # If you load env variable from file and
 # you want to raise execption in case of
 # missing dotenv file, to make this error
-# immediately obvious then use the bang 
+# immediately obvious then use the bang
 # verion of the load method:
 Dotenv.load!
 # or
 Dotenv.load! ".env-other"
+
+# Loading multiple files in order,
+# and sets the last loaded value for a varibale
+Dotenv.load! %w(.env .env.test)
+
 
 # From IO
 Dotenv.load MemoryIO.new("VAR=test")
@@ -72,6 +77,7 @@ puts ENV["MY_VARIABLE"] # my-value
 ## Contributors
 
 - [[gdotdesign]](https://github.com/[gdotdesign]) Gusztáv Szikszai - creator, maintainer
-- [[bonyiii]](https://github.com/[bonyiii]) 
+- [[bonyiii]](https://github.com/[bonyiii])
 - [[kriskova]](https://github.com/kriskova)
 - [[neovintage]](https://github.com/[neovintage]) Rimas Silkaitis
+- [[rodrigopinto]](https://github.com/[rodrigopinto]) Rodrigo Pinto
