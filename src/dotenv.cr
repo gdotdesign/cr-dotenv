@@ -12,11 +12,17 @@ module Dotenv
     @@verbose = value
   end
 
-  def load(path = ".env") : Hash(String, String)
-    load File.open(File.expand_path(path))
+  def load(filename = ".env") : Hash(String, String)
+    load open(filename)
   rescue ex
-    log "DOTENV - Could not open file: #{path}"
+    log "DOTENV - Could not open file: #{filename}"
     {} of String => String
+  end
+
+  def load(filenames : Array(String)) : Hash(String, String)
+    filenames.each_with_object({} of String => String) do |filename, hash|
+      hash.merge!(load(filename))
+    end
   end
 
   def load(io : IO) : Hash(String, String)
@@ -35,10 +41,16 @@ module Dotenv
     ENV
   end
 
-  def load!(path = ".env") : Hash(String, String)
-    load File.open(File.expand_path(path))
+  def load!(filename = ".env") : Hash(String, String)
+    load open(filename)
   rescue ex
     raise FileMissing.new("Missing file!")
+  end
+
+  def load!(filenames : Array(String)) : Hash(String, String)
+    filenames.each_with_object({} of String => String) do |filename, hash|
+      hash.merge!(load!(filename))
+    end
   end
 
   def load!(io : IO) : Hash(String, String)
@@ -60,5 +72,9 @@ module Dotenv
 
   private def log(message : String)
     puts message if @@verbose
+  end
+
+  private def open(filename : String) : File
+    File.open(File.expand_path(filename))
   end
 end
