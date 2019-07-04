@@ -25,7 +25,18 @@ describe Dotenv do
 
       File.delete ".test-env"
     end
-
+    context "Value with quotes" do
+      File.write ".test-env", %[VAR="Hello, World!"]
+      it "should load env" do
+        Dotenv.load ".test-env"
+        ENV["VAR"].should eq "Hello, World!"
+      end
+      it "should return hash" do
+        hash = Dotenv.load ".test-env"
+        hash["VAR"].should eq "Hello, World!"
+      end
+      File.delete ".test-env"
+    end
     context "Multiple existing file" do
       File.write ".test-env", "VAR=Hello"
       File.write ".local-env", "VAR=HelloLocal"
