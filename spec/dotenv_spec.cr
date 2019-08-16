@@ -55,6 +55,18 @@ describe Dotenv do
       File.delete ".local-env"
     end
 
+    context "Has existing var in ENV" do
+      File.write ".test-env", "VAR=Hello"
+
+      it "not override existing var" do
+        ENV["VAR"] = "existing"
+        Dotenv.load ".test-env"
+        ENV["VAR"].should eq "existing"
+      end
+
+      File.delete ".test-env"
+    end
+
     context "Comment Lines and Empty Lines" do
       File.write ".test-env", "# This is a comment\nVAR=Dude\n\n"
 

@@ -15,28 +15,33 @@ module Dotenv
   def load(filename = ".env") : Hash(String, String)
     load open(filename)
   rescue ex
-    log "DOTENV - Could not open file: #{filename}"
+    log "DOTENV - Could not open file: '#{filename}'"
     {} of String => String
   end
 
   def load(filenames : Array(String)) : Hash(String, String)
-    filenames.each_with_object({} of String => String) do |filename, hash|
-      hash.merge!(load(filename))
+    newvars = filenames.each_with_object({} of String => String) do |filename, hash|
+      begin
+        hash.merge!(parse(open(filename)))
+      rescue ex : Errno
+        log "DOTENV - Could not open file: '#{filename}'"
+      end
     end
+    load(newvars)
+    newvars
   end
 
   def load(io : IO) : Hash(String, String)
-    hash = {} of String => String
-    io.each_line do |line|
-      handle_line line, hash
-    end
-    load hash
+    hash = parse(io)
+    load(hash)
     hash
   end
 
   def load(hash : Hash(String, String))
     hash.each do |key, value|
-      ENV[key] = value
+      unless ENV.has_key?(key)
+        ENV[key] = value
+      end
     end
     ENV
   end
@@ -44,13 +49,19 @@ module Dotenv
   def load!(filename = ".env") : Hash(String, String)
     load open(filename)
   rescue ex
-    raise FileMissing.new("Missing file!")
+    raise FileMissing.new("Missing file! '#{filename}'")
   end
 
   def load!(filenames : Array(String)) : Hash(String, String)
-    filenames.each_with_object({} of String => String) do |filename, hash|
-      hash.merge!(load!(filename))
+    newvars = filenames.each_with_object({} of String => String) do |filename, hash|
+      begin
+        hash.merge!(parse(open(filename)))
+      rescue ex : Errno
+        raise FileMissing.new("Missing file! '#{filename}'")
+      end
     end
+    load(newvars)
+    newvars
   end
 
   def load!(io : IO) : Hash(String, String)
@@ -59,6 +70,14 @@ module Dotenv
 
   def load!(hash : Hash(String, String))
     load(hash)
+  end
+  
+  private def parse(io : IO) : Hash(String, String)
+    hash = {} of String => String
+    io.each_line do |line|
+      handle_line line, hash
+    end
+    hash
   end
 
   private def handle_line(line, hash)
