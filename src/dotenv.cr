@@ -1,5 +1,3 @@
-require "./dotenv/*"
-
 module Dotenv
   extend self
 
