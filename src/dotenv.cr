@@ -13,7 +13,7 @@ module Dotenv
   end
 
   def load(filename = ".env") : Hash(String, String)
-    load open(filename)
+    load parse_file(filename)
   rescue ex
     log "DOTENV - Could not open file: '#{filename}'"
     {} of String => String
@@ -22,7 +22,7 @@ module Dotenv
   def load(filenames : Array(String)) : Hash(String, String)
     newvars = filenames.each_with_object({} of String => String) do |filename, hash|
       begin
-        hash.merge!(parse(open(filename)))
+        hash.merge!(parse_file(filename))
       rescue ex : Errno
         log "DOTENV - Could not open file: '#{filename}'"
       end
@@ -37,17 +37,17 @@ module Dotenv
     hash
   end
 
-  def load(hash : Hash(String, String))
+  def load(hash : Hash(String, String)) : Hash(String, String)
     hash.each do |key, value|
       unless ENV.has_key?(key)
         ENV[key] = value
       end
     end
-    ENV
+    hash
   end
 
   def load!(filename = ".env") : Hash(String, String)
-    load open(filename)
+    load parse_file(filename)
   rescue ex
     raise FileMissing.new("Missing file! '#{filename}'")
   end
@@ -55,7 +55,7 @@ module Dotenv
   def load!(filenames : Array(String)) : Hash(String, String)
     newvars = filenames.each_with_object({} of String => String) do |filename, hash|
       begin
-        hash.merge!(parse(open(filename)))
+        hash.merge!(parse_file(filename))
       rescue ex : Errno
         raise FileMissing.new("Missing file! '#{filename}'")
       end
@@ -71,9 +71,17 @@ module Dotenv
   def load!(hash : Hash(String, String))
     load(hash)
   end
-  
+
+  private def parse_file(filename : String) : Hash(String, String)
+    hash = Hash(String, String).new
+    File.each_line filename do |line|
+      handle_line line, hash
+    end
+    hash
+  end
+
   private def parse(io : IO) : Hash(String, String)
-    hash = {} of String => String
+    hash = Hash(String, String).new
     io.each_line do |line|
       handle_line line, hash
     end
@@ -93,9 +101,5 @@ module Dotenv
 
   private def log(message : String)
     puts message if @@verbose
-  end
-
-  private def open(filename : String) : File
-    File.open(File.expand_path(filename))
   end
 end
