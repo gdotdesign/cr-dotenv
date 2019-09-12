@@ -5,13 +5,61 @@ Spec.before_each do
   ENV.clear
 end
 
-Dotenv.verbose = false
-
 describe Dotenv do
   describe "#load_string" do
-    it "loads environment variables with quoted values" do
-      Dotenv.load_string %[VAR="Hello, World!"]
-      ENV["VAR"].should eq "Hello, World!"
+    describe "simple quoted value" do
+      it "reads with whitespaces" do
+        hash = Dotenv.load_string "VAR=' value '"
+        hash["VAR"].should eq " value "
+      end
+
+      it "reads one with double quotes" do
+        hash = Dotenv.load_string %(VAR='"value"')
+        hash["VAR"].should eq %("value")
+      end
+
+      it "reads one including simple quotes" do
+        hash = Dotenv.load_string "VAR='va'lue'"
+        hash["VAR"].should eq "va'lue"
+      end
+    end
+
+    describe "double quoted value" do
+      it "reads with whitespaces" do
+        hash = Dotenv.load_string %(VAR=" value ")
+        hash["VAR"].should eq %( value )
+      end
+
+      it "reads one with simple quotes" do
+        hash = Dotenv.load_string %(VAR="'value'")
+        hash["VAR"].should eq %('value')
+      end
+
+      it "reads one including double quotes" do
+        hash = Dotenv.load_string %(VAR="va"l"ue")
+        hash["VAR"].should eq %(va"l"ue)
+      end
+    end
+
+    it "raises on space before a variable value" do
+      ex = expect_raises(Dotenv::ParseError) do
+        Dotenv.load_string "VAR= val"
+      end
+      ex.to_s.should eq "Parse error on line: `VAR= val`"
+      ex.cause.to_s.should eq "A value cannot start with a whitespace: ' '"
+    end
+
+    it "raises on '#' inside a variable key" do
+      ex = expect_raises(Dotenv::ParseError) do
+        Dotenv.load_string "V#AR=val"
+      end
+      ex.to_s.should eq "Parse error on line: `V#AR=val`"
+      ex.cause.to_s.should eq "A variable key cannot contain a '#'"
+    end
+
+    it "strips whitespaces" do
+      Dotenv.load_string "  VAR=Hello \t\r "
+      ENV["VAR"].should eq "Hello"
     end
 
     it "does not override existing var" do
