@@ -16,55 +16,30 @@ dependencies:
 
 ## Usage
 
-Your `.env` file:
+### Dotenv file example
 
 ```
 # Comments can be included for context
 #
 MY_VARIABLE=my-value
 
-# Empty Lines are also ignore
+# Empty Lines are also ignored
 #
 ANOTHER_VAR=awesome-value
 ```
 
-In your application:
+### Basic example
+
+To load a file named `.env-file`:
 
 ```crystal
 require "dotenv"
 
-# Load deafult ".env" file
-Dotenv.load
-
-# Other file
-Dotenv.load ".env-other"
-
-# If you load env variable from file and
-# you want to raise execption in case of
-# missing dotenv file, to make this error
-# immediately obvious then use the bang
-# verion of the load method:
-Dotenv.load!
-# or
-Dotenv.load! ".env-other"
-
-# Loading multiple files in order,
-# and sets the last loaded value for a varibale
-Dotenv.load! %w(.env .env.test)
-
-
-# From IO
-Dotenv.load MemoryIO.new("VAR=test")
-
-# From Hash
-Dotenv.load({"VAR" => "test"})
-
-# A Hash is returned with the loaded variables
-hash = Dotenv.load
-
-puts hash["MY_VARIABLE"] # my-value
-puts ENV["MY_VARIABLE"] # my-value
+The default file is ".env"
+Dotenv.load ".env-file"
 ```
+
+See the API docs for more examples.
 
 ## Contributing
 

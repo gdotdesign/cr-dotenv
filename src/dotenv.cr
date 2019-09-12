@@ -1,5 +1,3 @@
-require "./dotenv/*"
-
 module Dotenv
   extend self
 
@@ -12,78 +10,83 @@ module Dotenv
     @@verbose = value
   end
 
-  def load(filename = ".env") : Hash(String, String)
-    load parse_file(filename)
-  rescue ex
-    log "DOTENV - Could not open file: '#{filename}'"
-    {} of String => String
-  end
-
-  def load(filenames : Array(String)) : Hash(String, String)
-    newvars = filenames.each_with_object({} of String => String) do |filename, hash|
-      begin
-        hash.merge!(parse_file(filename))
-      rescue ex : Errno
-        log "DOTENV - Could not open file: '#{filename}'"
-      end
+  # Loads environment variables from a `String` into the `ENV` constant.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # hash = Dotenv.load_string "VAR=Hello"
+  # hash # => {"VAR" => "Hello"}
+  # ```
+  def load_string(env_vars : String) : Hash(String, String)
+    hash = Hash(String, String).new
+    env_vars.each_line do |line|
+      handle_line line, hash
     end
-    load(newvars)
-    newvars
+    load hash
   end
 
+  # Loads environment variables from a file into the `ENV` constant
+  # if the file is present, else returns `nil`.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # File.write ".env-file", "VAR=Hello"
+  # Dotenv.load? ".env-file"    # => {"VAR" => "Hello"}
+  # Dotenv.load? ".not-present" # => nil
+  # ```
+  def load?(filename : Path | String = ".env") : Hash(String, String)?
+    if File.exists?(filename) || File.symlink?(filename)
+      load filename
+    end
+  end
+
+  # Loads environment variables from a file into the `ENV` constant.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # File.write ".env-file", "VAR=Hello"
+  # Dotenv.load ".env-file"    # => {"VAR" => "Hello"}
+  # Dotenv.load ".absent-file" # => No such file or directory (Errno)
+  # ```
+  def load(filename : Path | String = ".env") : Hash(String, String)
+    hash = Hash(String, String).new
+    File.each_line filename do |line|
+      handle_line line, hash
+    end
+    load hash
+  end
+
+  # Loads environment variables from an `IO` into the `ENV` constant.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # hash = Dotenv.load IO::Memory.new("VAR=Hello")
+  # hash # => {"VAR" => "Hello"}
+  # ```
   def load(io : IO) : Hash(String, String)
-    hash = parse(io)
-    load(hash)
-    hash
+    hash = Hash(String, String).new
+    io.each_line do |line|
+      handle_line line, hash
+    end
+    load hash
   end
 
+  # Loads a Hash of environment variables into the `ENV` constant.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # Dotenv.load({"VAR" => "test"})
+  # ```
   def load(hash : Hash(String, String)) : Hash(String, String)
     hash.each do |key, value|
       unless ENV.has_key?(key)
         ENV[key] = value
       end
-    end
-    hash
-  end
-
-  def load!(filename = ".env") : Hash(String, String)
-    load parse_file(filename)
-  rescue ex
-    raise FileMissing.new("Missing file! '#{filename}'")
-  end
-
-  def load!(filenames : Array(String)) : Hash(String, String)
-    newvars = filenames.each_with_object({} of String => String) do |filename, hash|
-      begin
-        hash.merge!(parse_file(filename))
-      rescue ex : Errno
-        raise FileMissing.new("Missing file! '#{filename}'")
-      end
-    end
-    load(newvars)
-    newvars
-  end
-
-  def load!(io : IO) : Hash(String, String)
-    load(io)
-  end
-
-  def load!(hash : Hash(String, String))
-    load(hash)
-  end
-
-  private def parse_file(filename : String) : Hash(String, String)
-    hash = Hash(String, String).new
-    File.each_line filename do |line|
-      handle_line line, hash
-    end
-    hash
-  end
-
-  private def parse(io : IO) : Hash(String, String)
-    hash = Hash(String, String).new
-    io.each_line do |line|
-      handle_line line, hash
     end
     hash
   end
