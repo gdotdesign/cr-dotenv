@@ -16,7 +16,7 @@ module Dotenv
   # require "dotenv"
   #
   # hash = Dotenv.load_string "VAR=Hello"
-  # hash #=> {"VAR" => "Hello"}
+  # hash # => {"VAR" => "Hello"}
   # ```
   def load_string(env_vars : String) : Hash(String, String)
     hash = Hash(String, String).new
@@ -24,27 +24,39 @@ module Dotenv
       handle_line line, hash
     end
     load hash
-    hash
   end
 
-  # Loads environment variables from a file into the `ENV` constant,
-  # and skip file reading if missing.
+  # Loads environment variables from a file into the `ENV` constant
+  # if the file is present, else returns `nil`.
   #
   # ```
   # require "dotenv"
   #
   # File.write ".env-file", "VAR=Hello"
-  # Dotenv.load ".env-file" #=> {"VAR" => "Hello"}
+  # Dotenv.load? ".env-file"    # => {"VAR" => "Hello"}
+  # Dotenv.load? ".not-present" # => nil
+  # ```
+  def load?(filename : Path | String = ".env") : Hash(String, String)?
+    if File.exists?(filename) || File.symlink?(filename)
+      load filename
+    end
+  end
+
+  # Loads environment variables from a file into the `ENV` constant.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # File.write ".env-file", "VAR=Hello"
+  # Dotenv.load ".env-file"    # => {"VAR" => "Hello"}
+  # Dotenv.load ".absent-file" # => No such file or directory (Errno)
   # ```
   def load(filename : Path | String = ".env") : Hash(String, String)
     hash = Hash(String, String).new
-    if File.exists?(filename) || File.symlink?(filename)
-      File.each_line filename do |line|
-        handle_line line, hash
-      end
+    File.each_line filename do |line|
+      handle_line line, hash
     end
     load hash
-    hash
   end
 
   # Loads environment variables from an `IO` into the `ENV` constant.
@@ -61,7 +73,6 @@ module Dotenv
       handle_line line, hash
     end
     load hash
-    hash
   end
 
   # Loads a Hash of environment variables into the `ENV` constant.

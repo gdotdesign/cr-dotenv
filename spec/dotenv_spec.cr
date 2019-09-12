@@ -49,8 +49,30 @@ describe Dotenv do
     end
   end
 
+  describe "#load?" do
+    it "returns nil on missing file" do
+      Dotenv.load?(".some-non-existent-env-file").should be_nil
+    end
+
+    it "loads environment variables" do
+      tempfile = File.tempfile "dotenv", &.print("VAR=Hello")
+      begin
+        Dotenv.load? tempfile.path
+        ENV["VAR"].should eq "Hello"
+      ensure
+        tempfile.delete
+      end
+    end
+  end
+
   describe "#load" do
     context "From file" do
+      it "raises on missing file" do
+        expect_raises(Errno) do
+          Dotenv.load ".some-non-existent-env-file"
+        end
+      end
+
       it "loads environment variables" do
         tempfile = File.tempfile "dotenv", &.print("VAR=Hello")
         begin
