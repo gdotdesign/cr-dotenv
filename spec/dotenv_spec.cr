@@ -1,4 +1,9 @@
-require "./spec_helper"
+require "spec"
+require "../src/dotenv"
+
+Spec.before_each do
+  ENV.clear
+end
 
 Dotenv.verbose = false
 
