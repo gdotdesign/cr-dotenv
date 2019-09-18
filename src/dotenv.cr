@@ -1,14 +1,101 @@
 module Dotenv
   extend self
 
-  class FileMissing < Exception
+  class ParseError < Exception
   end
 
-  @@verbose = true
+  # Raises an exception on parsing error.
+  class_property strict : Bool = true
 
-  def verbose=(value : Bool) : Bool
-    @@verbose = value
+  @[Flags]
+  private enum Quotes
+    Simple
+    Double
   end
+
+  private def handle_line(line : String, hash : Hash(String, String))
+    return if line.empty?
+
+    reader = Char::Reader.new line
+
+    # Parse variable key
+    first_non_blank = true
+
+    key = String.build do |str|
+      while reader.has_next?
+        case char = reader.current_char
+        when .ascii_whitespace?
+          reader.next_char
+        when '#'
+          # The line is a comment, skip it
+          return if first_non_blank
+          raise ParseError.new "A variable key cannot contain a '#'"
+        when '='
+          reader.next_char
+          break
+        else
+          first_non_blank = false
+          str << char
+          reader.next_char
+        end
+      end
+    end
+
+    # Parse variable value
+    first = true
+    quotes = Quotes::None
+
+    value = String.build do |str|
+      while reader.has_next?
+        case char = reader.current_char
+        when .ascii_whitespace?
+          if !quotes.none?
+            str << char
+          elsif first
+            raise ParseError.new("A value cannot start with a whitespace: '#{char}'")
+          end
+        when '\''
+          case quotes
+          when .none?
+            quotes = Quotes::Simple
+          when .simple?
+            reader.next_char
+            str << char if reader.has_next?
+            next
+            # Can be the trailing quote
+          else
+            str << char
+          end
+        when '"'
+          case quotes
+          when .none?
+            quotes = Quotes::Double
+          when .double?
+            reader.next_char
+            str << char if reader.has_next?
+            next
+            # Can be the trailing quote
+          else
+            str << char
+          end
+        when '#'
+          break if quotes.none?
+          str << char
+        else
+          first = false
+          str << char
+        end
+        reader.next_char
+      end
+    end
+
+    hash[key] = value
+  rescue ex
+    raise ParseError.new("Parse error on line: `#{line}`", cause: ex) if @@strict
+  end
+
+  # Call this proc on malformed lines.
+  # class_property malformed_line_proc : Proc(Exception, Nil) = ->(ex : Exception) { puts ex }
 
   # Loads environment variables from a `String` into the `ENV` constant.
   #
@@ -89,20 +176,5 @@ module Dotenv
       end
     end
     hash
-  end
-
-  private def handle_line(line, hash)
-    if line !~ /\A\s*(?:#.*)?\z/m
-      name, value = line.split("=", 2)
-      value = value.strip
-      value = value.lchop('"').rchop('"') if value.starts_with?('"') && value.ends_with?('"')
-      hash[name.strip] = value
-    end
-  rescue ex
-    log "DOTENV - Malformed line #{line}"
-  end
-
-  private def log(message : String)
-    puts message if @@verbose
   end
 end

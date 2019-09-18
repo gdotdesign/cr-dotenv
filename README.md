@@ -35,7 +35,7 @@ To load a file named `.env-file`:
 ```crystal
 require "dotenv"
 
-The default file is ".env"
+# The default file is ".env"
 Dotenv.load ".env-file"
 ```
 
