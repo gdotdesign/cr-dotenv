@@ -41,6 +41,14 @@ describe Dotenv do
       end
     end
 
+    it "raises on space in an unquoted value" do
+      ex = expect_raises(Dotenv::ParseError) do
+        Dotenv.load_string "VAR=va lue"
+      end
+      ex.to_s.should eq "Parse error on line: `VAR=va lue`"
+      ex.cause.to_s.should eq "An unquoted value cannot contain a whitespace: ' '"
+    end
+
     it "raises on space before a variable value" do
       ex = expect_raises(Dotenv::ParseError) do
         Dotenv.load_string "VAR= val"

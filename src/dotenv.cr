@@ -43,6 +43,7 @@ module Dotenv
 
     # Parse variable value
     first = true
+    last_whitespace : Char? = nil
     quotes = Quotes::None
 
     value = String.build do |str|
@@ -52,7 +53,9 @@ module Dotenv
           if !quotes.none?
             str << char
           elsif first
-            raise ParseError.new("A value cannot start with a whitespace: '#{char}'")
+            raise ParseError.new("A value cannot start with a whitespace: #{char.inspect}")
+          elsif !last_whitespace
+            last_whitespace = char
           end
         when '\''
           case quotes
@@ -82,6 +85,7 @@ module Dotenv
           break if quotes.none?
           str << char
         else
+          raise ParseError.new("An unquoted value cannot contain a whitespace: #{last_whitespace.inspect}") if last_whitespace
           first = false
           str << char
         end
@@ -93,9 +97,6 @@ module Dotenv
   rescue ex
     raise ParseError.new("Parse error on line: `#{line}`", cause: ex) if @@strict
   end
-
-  # Call this proc on malformed lines.
-  # class_property malformed_line_proc : Proc(Exception, Nil) = ->(ex : Exception) { puts ex }
 
   # Loads environment variables from a `String` into the `ENV` constant.
   #
