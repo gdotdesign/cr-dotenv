@@ -6,6 +6,7 @@ module Dotenv
 
   # Raises an exception on parsing error.
   class_property strict : Bool = true
+  class_property skip_duplicate_keys : Bool = true
 
   @[Flags]
   private enum Quotes
@@ -172,10 +173,69 @@ module Dotenv
   # ```
   def load(hash : Hash(String, String)) : Hash(String, String)
     hash.each do |key, value|
-      unless ENV.has_key?(key)
+      unless ENV.has_key?(key) && skip_duplicate_keys
         ENV[key] = value
       end
     end
+    hash
+  end
+
+  # Allows for overriding existing `ENV` keys. See `load`.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # Dotenv.load ".env"       # => {"VAR" => "Hello"}
+  # Dotenv.load! ".env.test" # => {"VAR" => "World"}
+  # ```
+  def load!(filename : Path | String = ".env") : Hash(String, String)
+    load_with_temp_override do
+      load filename
+    end
+  end
+
+  # Allows for overriding existing `ENV` keys. See `load`.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # Dotenv.load IO::Memory.new("VAR=Hello")  # => {"VAR" => "Hello"}
+  # Dotenv.load! IO::Memory.new("VAR=World") # => {"VAR" => "World"}
+  # ```
+  def load!(io : IO) : Hash(String, String)
+    load_with_temp_override do
+      load io
+    end
+  end
+
+  # Allows for overriding existing `ENV` keys. See `load`.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # Dotenv.load({"VAR" => "Hello"})  # => ENV["VAR"] == "Hello"
+  # Dotenv.load!({"VAR" => "World"}) # => ENV["VAR"] == "World"
+  # ```
+  def load!(hash : Hash(String, String)) : Hash(String, String)
+    load_with_temp_override do
+      load hash
+    end
+  end
+
+  # Allows duplicate `ENV` keys to be overriden. Lock is placed back
+  # on after block finshes. returns the loaded env keys.
+  #
+  # ```
+  # require "dotenv"
+  #
+  # Dotenv.load_with_temp_override do
+  #   Dotenv.load({"VAR" => "test"})
+  # end
+  # ```
+  def load_with_temp_override : Hash(String, String)
+    self.skip_duplicate_keys = false
+    hash = yield
+    self.skip_duplicate_keys = true
     hash
   end
 end

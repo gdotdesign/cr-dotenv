@@ -159,4 +159,44 @@ describe Dotenv do
       end
     end
   end
+
+  describe "#load!" do
+    context "From file" do
+      it "loads environment variables, and overrides duplicate keys" do
+        dev_tempfile = File.tempfile "dotenv_dev", &.print("VAR=Hello")
+        test_tempfile = File.tempfile "dotenv_test", &.print("VAR=World")
+        begin
+          Dotenv.load dev_tempfile.path
+          ENV["VAR"].should eq "Hello"
+          Dotenv.load! test_tempfile.path
+          ENV["VAR"].should eq "World"
+        ensure
+          dev_tempfile.delete
+          test_tempfile.delete
+        end
+      end
+    end
+
+    context "From IO" do
+      it "loads environment variables, and overrides duplicate keys" do
+        io1 = IO::Memory.new "VAR2=test\nVAR3=other"
+        io2 = IO::Memory.new "VAR2=other\nVAR3=test"
+        Dotenv.load io1
+        ENV["VAR2"].should eq "test"
+        ENV["VAR3"].should eq "other"
+        Dotenv.load! io2
+        ENV["VAR2"].should eq "other"
+        ENV["VAR3"].should eq "test"
+      end
+    end
+
+    context "From Hash" do
+      it "loads environment variables, and overrides duplicate keys" do
+        Dotenv.load({"test" => "test"})
+        ENV["test"].should eq "test"
+        Dotenv.load!({"test" => "updated"})
+        ENV["test"].should eq "updated"
+      end
+    end
+  end
 end
