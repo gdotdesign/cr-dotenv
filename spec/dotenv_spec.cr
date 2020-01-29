@@ -6,7 +6,20 @@ Spec.before_each do
 end
 
 describe Dotenv do
-  describe "#load_string" do
+  describe ".parse" do
+    it "from String" do
+      hash = Dotenv.parse "VAR=Hello"
+      hash.should eq({"VAR" => "Hello"})
+    end
+
+    it "from IO" do
+      io = IO::Memory.new "VAR=Hello"
+      hash = Dotenv.parse io
+      hash.should eq({"VAR" => "Hello"})
+    end
+  end
+
+  describe ".load_string" do
     describe "simple quoted value" do
       it "reads with whitespaces" do
         hash = Dotenv.load_string "VAR=' value '"
@@ -111,7 +124,7 @@ describe Dotenv do
     end
   end
 
-  describe "#load?" do
+  describe ".load?" do
     it "returns nil on missing file" do
       Dotenv.load?(".some-non-existent-env-file").should be_nil
     end
@@ -138,7 +151,7 @@ describe Dotenv do
     end
   end
 
-  describe "#load" do
+  describe ".load" do
     context "From file" do
       it "raises on missing file" do
         expect_raises(Errno) do
@@ -168,7 +181,7 @@ describe Dotenv do
       end
     end
 
-    context "From IO" do
+    context "from IO" do
       it "loads environment variables" do
         io = IO::Memory.new "VAR2=test\nVAR3=other"
         hash = Dotenv.load io
@@ -190,7 +203,7 @@ describe Dotenv do
       end
     end
 
-    context "From Hash" do
+    context "from Hash" do
       it "loads environment variables" do
         hash = Dotenv.load({"test" => "test"})
         hash["test"].should eq "test"
