@@ -103,6 +103,12 @@ describe Dotenv do
       ENV["VAR1"].should eq "Hello"
       ENV["HELLO"]?.should be_nil
     end
+
+    it "loads a string, and overrides duplicate keys" do
+      ENV["VAR"] = "Hello"
+      Dotenv.load_string "VAR=World", override_keys: true
+      ENV["VAR"].should eq "World"
+    end
   end
 
   describe "#load?" do
@@ -110,10 +116,21 @@ describe Dotenv do
       Dotenv.load?(".some-non-existent-env-file").should be_nil
     end
 
-    it "loads environment variables" do
+    it "loads environment variables from a file" do
       tempfile = File.tempfile "dotenv", &.print("VAR=Hello")
       begin
         Dotenv.load? tempfile.path
+        ENV["VAR"].should eq "Hello"
+      ensure
+        tempfile.delete
+      end
+    end
+
+    it "loads environment variables from a file, and overrides duplicate keys" do
+      tempfile = File.tempfile "dotenv", &.print("VAR=Hello")
+      begin
+        ENV["VAR"] = "World"
+        Dotenv.load? tempfile.path, override_keys: true
         ENV["VAR"].should eq "Hello"
       ensure
         tempfile.delete
@@ -138,6 +155,17 @@ describe Dotenv do
           tempfile.delete
         end
       end
+
+      it "loads environment variables, and overrides duplicate keys" do
+        tempfile = File.tempfile "dotenv", &.print("VAR=Hello")
+        begin
+          ENV["VAR"] = "World"
+          Dotenv.load tempfile.path, override_keys: true
+          ENV["VAR"].should eq "Hello"
+        ensure
+          tempfile.delete
+        end
+      end
     end
 
     context "From IO" do
@@ -149,6 +177,17 @@ describe Dotenv do
         ENV["VAR2"].should eq "test"
         ENV["VAR3"].should eq "other"
       end
+
+      it "loads environment variables, and overrides duplicate keys" do
+        io1 = IO::Memory.new "VAR2=test\nVAR3=other"
+        io2 = IO::Memory.new "VAR2=other\nVAR3=test"
+        Dotenv.load io1
+        ENV["VAR2"].should eq "test"
+        ENV["VAR3"].should eq "other"
+        Dotenv.load io2, override_keys: true
+        ENV["VAR2"].should eq "other"
+        ENV["VAR3"].should eq "test"
+      end
     end
 
     context "From Hash" do
@@ -157,44 +196,11 @@ describe Dotenv do
         hash["test"].should eq "test"
         ENV["test"].should eq "test"
       end
-    end
-  end
 
-  describe "#load!" do
-    context "From file" do
-      it "loads environment variables, and overrides duplicate keys" do
-        dev_tempfile = File.tempfile "dotenv_dev", &.print("VAR=Hello")
-        test_tempfile = File.tempfile "dotenv_test", &.print("VAR=World")
-        begin
-          Dotenv.load dev_tempfile.path
-          ENV["VAR"].should eq "Hello"
-          Dotenv.load! test_tempfile.path
-          ENV["VAR"].should eq "World"
-        ensure
-          dev_tempfile.delete
-          test_tempfile.delete
-        end
-      end
-    end
-
-    context "From IO" do
-      it "loads environment variables, and overrides duplicate keys" do
-        io1 = IO::Memory.new "VAR2=test\nVAR3=other"
-        io2 = IO::Memory.new "VAR2=other\nVAR3=test"
-        Dotenv.load io1
-        ENV["VAR2"].should eq "test"
-        ENV["VAR3"].should eq "other"
-        Dotenv.load! io2
-        ENV["VAR2"].should eq "other"
-        ENV["VAR3"].should eq "test"
-      end
-    end
-
-    context "From Hash" do
       it "loads environment variables, and overrides duplicate keys" do
         Dotenv.load({"test" => "test"})
         ENV["test"].should eq "test"
-        Dotenv.load!({"test" => "updated"})
+        Dotenv.load({"test" => "updated"}, override_keys: true)
         ENV["test"].should eq "updated"
       end
     end

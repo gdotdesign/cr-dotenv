@@ -6,7 +6,6 @@ module Dotenv
 
   # Raises an exception on parsing error.
   class_property strict : Bool = true
-  class_property skip_duplicate_keys : Bool = true
 
   @[Flags]
   private enum Quotes
@@ -107,12 +106,12 @@ module Dotenv
   # hash = Dotenv.load_string "VAR=Hello"
   # hash # => {"VAR" => "Hello"}
   # ```
-  def load_string(env_vars : String) : Hash(String, String)
+  def load_string(env_vars : String, override_keys : Bool = false) : Hash(String, String)
     hash = Hash(String, String).new
     env_vars.each_line do |line|
       handle_line line, hash
     end
-    load hash
+    load hash, override_keys
   end
 
   # Loads environment variables from a file into the `ENV` constant
@@ -125,9 +124,9 @@ module Dotenv
   # Dotenv.load? ".env-file"    # => {"VAR" => "Hello"}
   # Dotenv.load? ".not-present" # => nil
   # ```
-  def load?(filename : Path | String = ".env") : Hash(String, String)?
+  def load?(filename : Path | String = ".env", override_keys : Bool = false) : Hash(String, String)?
     if File.exists?(filename) || File.symlink?(filename)
-      load filename
+      load filename, override_keys
     end
   end
 
@@ -140,12 +139,12 @@ module Dotenv
   # Dotenv.load ".env-file"    # => {"VAR" => "Hello"}
   # Dotenv.load ".absent-file" # => No such file or directory (Errno)
   # ```
-  def load(filename : Path | String = ".env") : Hash(String, String)
+  def load(filename : Path | String = ".env", override_keys : Bool = false) : Hash(String, String)
     hash = Hash(String, String).new
     File.each_line filename do |line|
       handle_line line, hash
     end
-    load hash
+    load hash, override_keys
   end
 
   # Loads environment variables from an `IO` into the `ENV` constant.
@@ -156,12 +155,12 @@ module Dotenv
   # hash = Dotenv.load IO::Memory.new("VAR=Hello")
   # hash # => {"VAR" => "Hello"}
   # ```
-  def load(io : IO) : Hash(String, String)
+  def load(io : IO, override_keys : Bool = false) : Hash(String, String)
     hash = Hash(String, String).new
     io.each_line do |line|
       handle_line line, hash
     end
-    load hash
+    load hash, override_keys
   end
 
   # Loads a Hash of environment variables into the `ENV` constant.
@@ -171,71 +170,12 @@ module Dotenv
   #
   # Dotenv.load({"VAR" => "test"})
   # ```
-  def load(hash : Hash(String, String)) : Hash(String, String)
+  def load(hash : Hash(String, String), override_keys : Bool = false) : Hash(String, String)
     hash.each do |key, value|
-      unless ENV.has_key?(key) && skip_duplicate_keys
+      unless ENV.has_key?(key) && !override_keys
         ENV[key] = value
       end
     end
-    hash
-  end
-
-  # Allows for overriding existing `ENV` keys. See `load`.
-  #
-  # ```
-  # require "dotenv"
-  #
-  # Dotenv.load ".env"       # => {"VAR" => "Hello"}
-  # Dotenv.load! ".env.test" # => {"VAR" => "World"}
-  # ```
-  def load!(filename : Path | String = ".env") : Hash(String, String)
-    load_with_temp_override do
-      load filename
-    end
-  end
-
-  # Allows for overriding existing `ENV` keys. See `load`.
-  #
-  # ```
-  # require "dotenv"
-  #
-  # Dotenv.load IO::Memory.new("VAR=Hello")  # => {"VAR" => "Hello"}
-  # Dotenv.load! IO::Memory.new("VAR=World") # => {"VAR" => "World"}
-  # ```
-  def load!(io : IO) : Hash(String, String)
-    load_with_temp_override do
-      load io
-    end
-  end
-
-  # Allows for overriding existing `ENV` keys. See `load`.
-  #
-  # ```
-  # require "dotenv"
-  #
-  # Dotenv.load({"VAR" => "Hello"})  # => ENV["VAR"] == "Hello"
-  # Dotenv.load!({"VAR" => "World"}) # => ENV["VAR"] == "World"
-  # ```
-  def load!(hash : Hash(String, String)) : Hash(String, String)
-    load_with_temp_override do
-      load hash
-    end
-  end
-
-  # Allows duplicate `ENV` keys to be overriden. Lock is placed back
-  # on after block finshes. returns the loaded env keys.
-  #
-  # ```
-  # require "dotenv"
-  #
-  # Dotenv.load_with_temp_override do
-  #   Dotenv.load({"VAR" => "test"})
-  # end
-  # ```
-  def load_with_temp_override : Hash(String, String)
-    self.skip_duplicate_keys = false
-    hash = yield
-    self.skip_duplicate_keys = true
     hash
   end
 end
