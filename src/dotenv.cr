@@ -106,12 +106,12 @@ module Dotenv
   # hash = Dotenv.load_string "VAR=Hello"
   # hash # => {"VAR" => "Hello"}
   # ```
-  def load_string(env_vars : String, skip_duplicate_keys : Bool = true) : Hash(String, String)
+  def load_string(env_vars : String, override_keys : Bool = false) : Hash(String, String)
     hash = Hash(String, String).new
     env_vars.each_line do |line|
       handle_line line, hash
     end
-    load hash, skip_duplicate_keys
+    load hash, override_keys
   end
 
   # Loads environment variables from a file into the `ENV` constant
@@ -124,9 +124,9 @@ module Dotenv
   # Dotenv.load? ".env-file"    # => {"VAR" => "Hello"}
   # Dotenv.load? ".not-present" # => nil
   # ```
-  def load?(filename : Path | String = ".env", skip_duplicate_keys : Bool = true) : Hash(String, String)?
+  def load?(filename : Path | String = ".env", override_keys : Bool = false) : Hash(String, String)?
     if File.exists?(filename) || File.symlink?(filename)
-      load filename, skip_duplicate_keys
+      load filename, override_keys
     end
   end
 
@@ -139,12 +139,12 @@ module Dotenv
   # Dotenv.load ".env-file"    # => {"VAR" => "Hello"}
   # Dotenv.load ".absent-file" # => No such file or directory (Errno)
   # ```
-  def load(filename : Path | String = ".env", skip_duplicate_keys : Bool = true) : Hash(String, String)
+  def load(filename : Path | String = ".env", override_keys : Bool = false) : Hash(String, String)
     hash = Hash(String, String).new
     File.each_line filename do |line|
       handle_line line, hash
     end
-    load hash, skip_duplicate_keys
+    load hash, override_keys
   end
 
   # Loads environment variables from an `IO` into the `ENV` constant.
@@ -155,12 +155,12 @@ module Dotenv
   # hash = Dotenv.load IO::Memory.new("VAR=Hello")
   # hash # => {"VAR" => "Hello"}
   # ```
-  def load(io : IO, skip_duplicate_keys : Bool = true) : Hash(String, String)
+  def load(io : IO, override_keys : Bool = false) : Hash(String, String)
     hash = Hash(String, String).new
     io.each_line do |line|
       handle_line line, hash
     end
-    load hash, skip_duplicate_keys
+    load hash, override_keys
   end
 
   # Loads a Hash of environment variables into the `ENV` constant.
@@ -170,9 +170,9 @@ module Dotenv
   #
   # Dotenv.load({"VAR" => "test"})
   # ```
-  def load(hash : Hash(String, String), skip_duplicate_keys : Bool = true) : Hash(String, String)
+  def load(hash : Hash(String, String), override_keys : Bool = false) : Hash(String, String)
     hash.each do |key, value|
-      unless ENV.has_key?(key) && skip_duplicate_keys
+      unless ENV.has_key?(key) && !override_keys
         ENV[key] = value
       end
     end

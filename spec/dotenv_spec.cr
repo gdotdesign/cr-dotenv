@@ -106,7 +106,7 @@ describe Dotenv do
 
     it "loads a string, and overrides duplicate keys" do
       ENV["VAR"] = "Hello"
-      Dotenv.load_string "VAR=World", skip_duplicate_keys: false
+      Dotenv.load_string "VAR=World", override_keys: true
       ENV["VAR"].should eq "World"
     end
   end
@@ -130,7 +130,7 @@ describe Dotenv do
       tempfile = File.tempfile "dotenv", &.print("VAR=Hello")
       begin
         ENV["VAR"] = "World"
-        Dotenv.load? tempfile.path, skip_duplicate_keys: false
+        Dotenv.load? tempfile.path, override_keys: true
         ENV["VAR"].should eq "Hello"
       ensure
         tempfile.delete
@@ -160,7 +160,7 @@ describe Dotenv do
         tempfile = File.tempfile "dotenv", &.print("VAR=Hello")
         begin
           ENV["VAR"] = "World"
-          Dotenv.load tempfile.path, skip_duplicate_keys: false
+          Dotenv.load tempfile.path, override_keys: true
           ENV["VAR"].should eq "Hello"
         ensure
           tempfile.delete
@@ -184,7 +184,7 @@ describe Dotenv do
         Dotenv.load io1
         ENV["VAR2"].should eq "test"
         ENV["VAR3"].should eq "other"
-        Dotenv.load io2, skip_duplicate_keys: false
+        Dotenv.load io2, override_keys: true
         ENV["VAR2"].should eq "other"
         ENV["VAR3"].should eq "test"
       end
@@ -200,7 +200,7 @@ describe Dotenv do
       it "loads environment variables, and overrides duplicate keys" do
         Dotenv.load({"test" => "test"})
         ENV["test"].should eq "test"
-        Dotenv.load({"test" => "updated"}, skip_duplicate_keys: false)
+        Dotenv.load({"test" => "updated"}, override_keys: true)
         ENV["test"].should eq "updated"
       end
     end
