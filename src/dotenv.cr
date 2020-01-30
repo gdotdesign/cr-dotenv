@@ -19,22 +19,26 @@ module Dotenv
     reader = Char::Reader.new line
 
     # Parse variable key
-    first_non_blank = true
+    first_non_blank = false
 
     key = String.build do |str|
       while reader.has_next?
         case char = reader.current_char
         when .ascii_whitespace?
+          # Raises if not a leading space
+          raise ParseError.new("A variable key cannot contain a whitespace: #{char.inspect}") if first_non_blank
           reader.next_char
         when '#'
           # The line is a comment, skip it
-          return if first_non_blank
-          raise ParseError.new "A variable key cannot contain a '#'"
+          return if !first_non_blank
+          raise ParseError.new("A variable key cannot contain '#'")
+        when '\'', '"', .ascii_whitespace?
+          raise ParseError.new("A variable key cannot contain #{char.inspect}")
         when '='
           reader.next_char
           break
         else
-          first_non_blank = false
+          first_non_blank = true
           str << char
           reader.next_char
         end
@@ -98,6 +102,22 @@ module Dotenv
     raise ParseError.new("Parse error on line: `#{line}`", cause: ex) if @@strict
   end
 
+  # Parses a `.env` formatted `String`/`IO` data, and returns a hash (without loading it to `ENV`).
+  #
+  # ```
+  # require "dotenv"
+  #
+  # hash = Dotenv.parse "VAR=Hello"
+  # hash # => {"VAR" => "Hello"}
+  # ```
+  def parse(env_vars : String | IO) : Hash(String, String)
+    hash = Hash(String, String).new
+    env_vars.each_line do |line|
+      handle_line line, hash
+    end
+    hash
+  end
+
   # Loads environment variables from a `String` into the `ENV` constant.
   #
   # ```
@@ -107,11 +127,7 @@ module Dotenv
   # hash # => {"VAR" => "Hello"}
   # ```
   def load_string(env_vars : String, override_keys : Bool = false) : Hash(String, String)
-    hash = Hash(String, String).new
-    env_vars.each_line do |line|
-      handle_line line, hash
-    end
-    load hash, override_keys
+    load parse(env_vars), override_keys
   end
 
   # Loads environment variables from a file into the `ENV` constant
@@ -140,9 +156,8 @@ module Dotenv
   # Dotenv.load ".absent-file" # => No such file or directory (Errno)
   # ```
   def load(filename : Path | String = ".env", override_keys : Bool = false) : Hash(String, String)
-    hash = Hash(String, String).new
-    File.each_line filename do |line|
-      handle_line line, hash
+    hash = File.open filename do |file|
+      parse file
     end
     load hash, override_keys
   end
@@ -156,11 +171,7 @@ module Dotenv
   # hash # => {"VAR" => "Hello"}
   # ```
   def load(io : IO, override_keys : Bool = false) : Hash(String, String)
-    hash = Hash(String, String).new
-    io.each_line do |line|
-      handle_line line, hash
-    end
-    load hash, override_keys
+    load parse(io), override_keys
   end
 
   # Loads a Hash of environment variables into the `ENV` constant.

@@ -5,8 +5,29 @@ Spec.before_each do
   ENV.clear
 end
 
+def expect_invalid_char(string : String, message : String, file = __FILE__, line = __LINE__)
+  ex = expect_raises(Dotenv::ParseError, file: file, line: line) do
+    Dotenv.load_string string
+  end
+  ex.to_s.should eq "Parse error on line: `#{string}`"
+  ex.cause.to_s.should eq message
+end
+
 describe Dotenv do
-  describe "#load_string" do
+  describe ".parse" do
+    it "from String" do
+      hash = Dotenv.parse "VAR=Hello"
+      hash.should eq({"VAR" => "Hello"})
+    end
+
+    it "from IO" do
+      io = IO::Memory.new "VAR=Hello"
+      hash = Dotenv.parse io
+      hash.should eq({"VAR" => "Hello"})
+    end
+  end
+
+  describe ".load_string" do
     describe "simple quoted value" do
       it "reads with whitespaces" do
         hash = Dotenv.load_string "VAR=' value '"
@@ -42,27 +63,17 @@ describe Dotenv do
     end
 
     it "raises on space in an unquoted value" do
-      ex = expect_raises(Dotenv::ParseError) do
-        Dotenv.load_string "VAR=va lue"
-      end
-      ex.to_s.should eq "Parse error on line: `VAR=va lue`"
-      ex.cause.to_s.should eq "An unquoted value cannot contain a whitespace: ' '"
+      expect_invalid_char "VAR=v al", "An unquoted value cannot contain a whitespace: ' '"
     end
 
     it "raises on space before a variable value" do
-      ex = expect_raises(Dotenv::ParseError) do
-        Dotenv.load_string "VAR= val"
-      end
-      ex.to_s.should eq "Parse error on line: `VAR= val`"
-      ex.cause.to_s.should eq "A value cannot start with a whitespace: ' '"
+      expect_invalid_char "VAR= val", "A value cannot start with a whitespace: ' '"
     end
 
-    it "raises on '#' inside a variable key" do
-      ex = expect_raises(Dotenv::ParseError) do
-        Dotenv.load_string "V#AR=val"
+    it "raises on invalid characters inside a variable key" do
+      {'#', '"', '\''}.each do |char|
+        expect_invalid_char "V#{char}AR=val", "A variable key cannot contain #{char.inspect}"
       end
-      ex.to_s.should eq "Parse error on line: `V#AR=val`"
-      ex.cause.to_s.should eq "A variable key cannot contain a '#'"
     end
 
     it "strips whitespaces" do
@@ -111,7 +122,7 @@ describe Dotenv do
     end
   end
 
-  describe "#load?" do
+  describe ".load?" do
     it "returns nil on missing file" do
       Dotenv.load?(".some-non-existent-env-file").should be_nil
     end
@@ -138,7 +149,7 @@ describe Dotenv do
     end
   end
 
-  describe "#load" do
+  describe ".load" do
     context "From file" do
       it "raises on missing file" do
         expect_raises(Errno) do
@@ -168,7 +179,7 @@ describe Dotenv do
       end
     end
 
-    context "From IO" do
+    context "from IO" do
       it "loads environment variables" do
         io = IO::Memory.new "VAR2=test\nVAR3=other"
         hash = Dotenv.load io
@@ -190,7 +201,7 @@ describe Dotenv do
       end
     end
 
-    context "From Hash" do
+    context "from Hash" do
       it "loads environment variables" do
         hash = Dotenv.load({"test" => "test"})
         hash["test"].should eq "test"
