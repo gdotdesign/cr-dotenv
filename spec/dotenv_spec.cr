@@ -5,6 +5,14 @@ Spec.before_each do
   ENV.clear
 end
 
+def expect_invalid_char(string : String, message : String, file = __FILE__, line = __LINE__)
+  ex = expect_raises(Dotenv::ParseError, file: file, line: line) do
+    Dotenv.load_string string
+  end
+  ex.to_s.should eq "Parse error on line: `#{string}`"
+  ex.cause.to_s.should eq message
+end
+
 describe Dotenv do
   describe ".parse" do
     it "from String" do
@@ -55,27 +63,17 @@ describe Dotenv do
     end
 
     it "raises on space in an unquoted value" do
-      ex = expect_raises(Dotenv::ParseError) do
-        Dotenv.load_string "VAR=va lue"
-      end
-      ex.to_s.should eq "Parse error on line: `VAR=va lue`"
-      ex.cause.to_s.should eq "An unquoted value cannot contain a whitespace: ' '"
+      expect_invalid_char "VAR=v al", "An unquoted value cannot contain a whitespace: ' '"
     end
 
     it "raises on space before a variable value" do
-      ex = expect_raises(Dotenv::ParseError) do
-        Dotenv.load_string "VAR= val"
-      end
-      ex.to_s.should eq "Parse error on line: `VAR= val`"
-      ex.cause.to_s.should eq "A value cannot start with a whitespace: ' '"
+      expect_invalid_char "VAR= val", "A value cannot start with a whitespace: ' '"
     end
 
-    it "raises on '#' inside a variable key" do
-      ex = expect_raises(Dotenv::ParseError) do
-        Dotenv.load_string "V#AR=val"
+    it "raises on invalid characters inside a variable key" do
+      {'#', '"', '\''}.each do |char|
+        expect_invalid_char "V#{char}AR=val", "A variable key cannot contain #{char.inspect}"
       end
-      ex.to_s.should eq "Parse error on line: `V#AR=val`"
-      ex.cause.to_s.should eq "A variable key cannot contain a '#'"
     end
 
     it "strips whitespaces" do

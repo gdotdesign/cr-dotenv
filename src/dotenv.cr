@@ -19,22 +19,26 @@ module Dotenv
     reader = Char::Reader.new line
 
     # Parse variable key
-    first_non_blank = true
+    first_non_blank = false
 
     key = String.build do |str|
       while reader.has_next?
         case char = reader.current_char
         when .ascii_whitespace?
+          # Raises if not a leading space
+          raise ParseError.new("A variable key cannot contain a whitespace: #{char.inspect}") if first_non_blank
           reader.next_char
         when '#'
           # The line is a comment, skip it
-          return if first_non_blank
-          raise ParseError.new "A variable key cannot contain a '#'"
+          return if !first_non_blank
+          raise ParseError.new("A variable key cannot contain '#'")
+        when '\'', '"', .ascii_whitespace?
+          raise ParseError.new("A variable key cannot contain #{char.inspect}")
         when '='
           reader.next_char
           break
         else
-          first_non_blank = false
+          first_non_blank = true
           str << char
           reader.next_char
         end
