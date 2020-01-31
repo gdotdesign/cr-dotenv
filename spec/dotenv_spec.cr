@@ -84,11 +84,17 @@ describe Dotenv do
       ex.cause.to_s.should eq "A value cannot start with a whitespace: ' '"
     end
 
+    it "raises on space inside a variable value" do
+      ex = assert_invalid_env_var "V AR=val"
+      ex.to_s.should eq "Parse error on line 1:1"
+      ex.cause.to_s.should eq "A variable key cannot contain a whitespace: ' '"
+    end
+
     it "raises on invalid characters inside a variable key" do
       {'#', '"', '\''}.each do |char|
         ex = assert_invalid_env_var "V#{char}AR=val"
         ex.to_s.should eq "Parse error on line 1:1"
-        ex.cause.to_s.should eq "A variable key cannot contain #{char.inspect}"
+        ex.cause.to_s.should eq "Invalid character in variable key: #{char.inspect}"
       end
     end
 
@@ -233,6 +239,31 @@ describe Dotenv do
         Dotenv.load({"test" => "updated"}, override_keys: true)
         ENV["test"].should eq "updated"
       end
+    end
+  end
+
+  describe ".build" do
+    it "an IO" do
+      io = IO::Memory.new
+      Dotenv.build(io, {"HELLO" => "world", "VAL" => "var"})
+      io.to_s.should eq "HELLO=world\nVAL=var\n"
+    end
+
+    it "raises on an invalid character inside a variable key" do
+      {'#', '"', '\'', ' '}.each do |char|
+        ex = expect_raises(Dotenv::BuildError) do
+          Dotenv.build({"V#{char}AR" => "val"})
+        end
+        ex.to_s.should eq "Invalid character in variable key at line 1:1: #{char.inspect}"
+      end
+    end
+
+    it "with simple quotes" do
+      Dotenv.build({"HELLO" => "world"}, value_quotes: :simple).should eq "HELLO='world'\n"
+    end
+
+    it "with double quotes" do
+      Dotenv.build({"HELLO" => "world"}, value_quotes: :double).should eq %(HELLO="world"\n)
     end
   end
 end

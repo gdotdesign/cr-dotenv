@@ -20,12 +20,6 @@ module Dotenv
 
     abstract def next_char : Char
 
-    @[Flags]
-    private enum Quotes
-      Simple
-      Double
-    end
-
     def parse : Hash(String, String)
       hash = Hash(String, String).new
       line_number = 1
@@ -78,14 +72,14 @@ module Dotenv
             raise Error.new("A variable key cannot contain a whitespace: #{@current_char.inspect}") if first_non_blank
           when '#'
             if first_non_blank
-              raise Error.new("A variable key cannot contain '#'")
+              raise Error.new("Invalid character in variable key: '#'")
             else
               # The line is a comment, skip it
               skip_comment
               break
             end
-          when '\'', '"', .ascii_whitespace?
-            raise Error.new("A variable key cannot contain #{@current_char.inspect}")
+          when '\'', '"'
+            raise Error.new("Invalid character in variable key: #{@current_char.inspect}")
           else
             first_non_blank = true
             str << @current_char
