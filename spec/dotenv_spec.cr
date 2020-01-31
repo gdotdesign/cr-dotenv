@@ -5,12 +5,10 @@ Spec.before_each do
   ENV.clear
 end
 
-def expect_invalid_char(string : String, message : String, file = __FILE__, line = __LINE__)
-  ex = expect_raises(Dotenv::ParseError, file: file, line: line) do
+def assert_invalid_env_var(string : String, file = __FILE__, line = __LINE__) : Exception
+  expect_raises(Dotenv::Parser::Error, file: file, line: line) do
     Dotenv.load_string string
   end
-  ex.to_s.should eq "Parse error on line: `#{string}`"
-  ex.cause.to_s.should eq message
 end
 
 describe Dotenv do
@@ -40,8 +38,14 @@ describe Dotenv do
       end
 
       it "reads one including simple quotes" do
-        hash = Dotenv.load_string "VAR='va'lue'"
+        hash = Dotenv.load_string "VAR=\"va'lue\""
         hash["VAR"].should eq "va'lue"
+      end
+
+      it "raises on unterminated quote" do
+        ex = assert_invalid_env_var "VAR='val"
+        ex.to_s.should eq "Parse error on value of variable key `VAR` on line 1:8"
+        ex.cause.to_s.should eq "Unterminated simple quote"
       end
     end
 
@@ -57,22 +61,34 @@ describe Dotenv do
       end
 
       it "reads one including double quotes" do
-        hash = Dotenv.load_string %(VAR="va"l"ue")
+        hash = Dotenv.load_string %(VAR='va"l"ue')
         hash["VAR"].should eq %(va"l"ue)
+      end
+
+      it "raises on unterminated quotes" do
+        ex = assert_invalid_env_var "VAR=\"val"
+        ex.to_s.should eq "Parse error on value of variable key `VAR` on line 1:8"
+        ex.cause.to_s.should eq "Unterminated double quotes"
       end
     end
 
     it "raises on space in an unquoted value" do
-      expect_invalid_char "VAR=v al", "An unquoted value cannot contain a whitespace: ' '"
+      ex = assert_invalid_env_var "VAR=v al"
+      ex.to_s.should eq "Parse error on value of variable key `VAR` on line 1:6"
+      ex.cause.to_s.should eq "An unquoted value cannot contain a whitespace: ' '"
     end
 
     it "raises on space before a variable value" do
-      expect_invalid_char "VAR= val", "A value cannot start with a whitespace: ' '"
+      ex = assert_invalid_env_var "VAR= val"
+      ex.to_s.should eq "Parse error on value of variable key `VAR` on line 1:4"
+      ex.cause.to_s.should eq "A value cannot start with a whitespace: ' '"
     end
 
     it "raises on invalid characters inside a variable key" do
       {'#', '"', '\''}.each do |char|
-        expect_invalid_char "V#{char}AR=val", "A variable key cannot contain #{char.inspect}"
+        ex = assert_invalid_env_var "V#{char}AR=val"
+        ex.to_s.should eq "Parse error on line 1:1"
+        ex.cause.to_s.should eq "A variable key cannot contain #{char.inspect}"
       end
     end
 
@@ -110,9 +126,12 @@ describe Dotenv do
     end
 
     it "reads valid lines only" do
+      Dotenv::Parser.strict = false
       Dotenv.load_string "VAR1=Hello\nHELLO:asd"
       ENV["VAR1"].should eq "Hello"
       ENV["HELLO"]?.should be_nil
+    ensure
+      Dotenv::Parser.strict = true
     end
 
     it "loads a string, and overrides duplicate keys" do

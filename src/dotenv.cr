@@ -1,106 +1,7 @@
+require "./parser"
+
 module Dotenv
   extend self
-
-  class ParseError < Exception
-  end
-
-  # Raises an exception on parsing error.
-  class_property strict : Bool = true
-
-  @[Flags]
-  private enum Quotes
-    Simple
-    Double
-  end
-
-  private def handle_line(line : String, hash : Hash(String, String))
-    return if line.empty?
-
-    reader = Char::Reader.new line
-
-    # Parse variable key
-    first_non_blank = false
-
-    key = String.build do |str|
-      while reader.has_next?
-        case char = reader.current_char
-        when .ascii_whitespace?
-          # Raises if not a leading space
-          raise ParseError.new("A variable key cannot contain a whitespace: #{char.inspect}") if first_non_blank
-          reader.next_char
-        when '#'
-          # The line is a comment, skip it
-          return if !first_non_blank
-          raise ParseError.new("A variable key cannot contain '#'")
-        when '\'', '"', .ascii_whitespace?
-          raise ParseError.new("A variable key cannot contain #{char.inspect}")
-        when '='
-          reader.next_char
-          break
-        else
-          first_non_blank = true
-          str << char
-          reader.next_char
-        end
-      end
-    end
-
-    # Parse variable value
-    first = true
-    last_whitespace : Char? = nil
-    quotes = Quotes::None
-
-    value = String.build do |str|
-      while reader.has_next?
-        case char = reader.current_char
-        when .ascii_whitespace?
-          if !quotes.none?
-            str << char
-          elsif first
-            raise ParseError.new("A value cannot start with a whitespace: #{char.inspect}")
-          elsif !last_whitespace
-            last_whitespace = char
-          end
-        when '\''
-          case quotes
-          when .none?
-            quotes = Quotes::Simple
-          when .simple?
-            reader.next_char
-            str << char if reader.has_next?
-            next
-            # Can be the trailing quote
-          else
-            str << char
-          end
-        when '"'
-          case quotes
-          when .none?
-            quotes = Quotes::Double
-          when .double?
-            reader.next_char
-            str << char if reader.has_next?
-            next
-            # Can be the trailing quote
-          else
-            str << char
-          end
-        when '#'
-          break if quotes.none?
-          str << char
-        else
-          raise ParseError.new("An unquoted value cannot contain a whitespace: #{last_whitespace.inspect}") if last_whitespace
-          first = false
-          str << char
-        end
-        reader.next_char
-      end
-    end
-
-    hash[key] = value
-  rescue ex
-    raise ParseError.new("Parse error on line: `#{line}`", cause: ex) if @@strict
-  end
 
   # Parses a `.env` formatted `String`/`IO` data, and returns a hash (without loading it to `ENV`).
   #
@@ -111,11 +12,7 @@ module Dotenv
   # hash # => {"VAR" => "Hello"}
   # ```
   def parse(env_vars : String | IO) : Hash(String, String)
-    hash = Hash(String, String).new
-    env_vars.each_line do |line|
-      handle_line line, hash
-    end
-    hash
+    Parser.new(env_vars).parse
   end
 
   # Loads environment variables from a `String` into the `ENV` constant.
