@@ -106,7 +106,7 @@ module Dotenv
   #
   # File.write ".env-file", "VAR=Hello"
   # Dotenv.load ".env-file"    # => {"VAR" => "Hello"}
-  # Dotenv.load ".absent-file" # => No such file or directory (Errno)
+  # Dotenv.load ".absent-file" # => No such file or directory (File::NotFoundError)
   # ```
   def load(filename : Path | String = ".env", override_keys : Bool = false) : Hash(String, String)
     hash = File.open filename do |file|

@@ -177,7 +177,7 @@ describe Dotenv do
   describe ".load" do
     context "From file" do
       it "raises on missing file" do
-        expect_raises(Errno) do
+        expect_raises({% if compare_versions(Crystal::VERSION, "0.34.0-0") >0 %}File::NotFoundError{%else%}Errno{%end%}) do
           Dotenv.load ".some-non-existent-env-file"
         end
       end
