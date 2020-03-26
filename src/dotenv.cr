@@ -56,9 +56,10 @@ module Dotenv
         case char
         when .ascii_whitespace?, '#', '\\', '"', '\'', '\n', '='
           raise BuildError.new("Invalid character in variable key at line #{line_number}:#{column_number}: #{char.inspect}")
+        else
+          io << char
+          column_number += 1
         end
-        io << char
-        column_number += 1
       end
       io << '='
       case value_quotes

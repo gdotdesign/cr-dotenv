@@ -162,6 +162,8 @@ module Dotenv
       case quotes
       when .simple? then raise Error.new("Unterminated simple quote")
       when .double? then raise Error.new("Unterminated double quotes")
+      else
+        # ok
       end
 
       value
