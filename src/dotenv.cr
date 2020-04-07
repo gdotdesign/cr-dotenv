@@ -56,9 +56,10 @@ module Dotenv
         case char
         when .ascii_whitespace?, '#', '\\', '"', '\'', '\n', '='
           raise BuildError.new("Invalid character in variable key at line #{line_number}:#{column_number}: #{char.inspect}")
+        else
+          io << char
+          column_number += 1
         end
-        io << char
-        column_number += 1
       end
       io << '='
       case value_quotes
@@ -106,7 +107,7 @@ module Dotenv
   #
   # File.write ".env-file", "VAR=Hello"
   # Dotenv.load ".env-file"    # => {"VAR" => "Hello"}
-  # Dotenv.load ".absent-file" # => No such file or directory (Errno)
+  # Dotenv.load ".absent-file" # => No such file or directory (File::NotFoundError)
   # ```
   def load(filename : Path | String = ".env", override_keys : Bool = false) : Hash(String, String)
     hash = File.open filename do |file|
