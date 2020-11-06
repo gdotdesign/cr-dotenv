@@ -1,6 +1,6 @@
 # Dotenv
 
-[![Build Status](https://travis-ci.org/gdotdesign/cr-dotenv.svg?branch=master)](https://travis-ci.org/gdotdesign/cr-dotenv)
+![Build Status](https://github.com/gdotdesign/cr-dotenv/workflows/CI/badge.svg)
 
 Loads `.env` file.
 
