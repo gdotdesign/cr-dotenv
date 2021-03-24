@@ -1,6 +1,6 @@
 name: dotenv
 version: 0.7.0
-
+crystal: ">= 0.34.0, < 2.0.0"
 authors:
   - Gusztáv Szikszai <guszti5@hotmail.com>
 
