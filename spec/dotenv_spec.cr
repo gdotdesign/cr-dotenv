@@ -117,7 +117,7 @@ describe Dotenv do
       hash.should eq({"VAR" => "Dude"})
     end
 
-    it "ingores empty lines" do
+    it "ignores empty lines" do
       hash = Dotenv.load_string <<-DOTENV
 
       VAR=Dude
