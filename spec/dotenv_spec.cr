@@ -117,6 +117,19 @@ describe Dotenv do
       hash.should eq({"VAR" => "Dude"})
     end
 
+    it "treats hash as comment in unquoted values" do
+      hash = Dotenv.load_string "KEY=value # this is a comment"
+      hash["KEY"].should eq "value"
+    end
+
+    it "preserves hash in quoted values" do
+      hash = Dotenv.load_string "KEY='value # not a comment'"
+      hash["KEY"].should eq "value # not a comment"
+      
+      hash = Dotenv.load_string %(KEY="value # not a comment")
+      hash["KEY"].should eq "value # not a comment"
+    end
+
     it "ignores empty lines" do
       hash = Dotenv.load_string <<-DOTENV
 
