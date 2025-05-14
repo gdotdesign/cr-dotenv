@@ -48,7 +48,7 @@ module Dotenv
         else                 next_char
         end
       end
-      next_char
+      next_char if @current_char != '\0'
     end
 
     private def parse_key : String?
@@ -140,8 +140,6 @@ module Dotenv
             end
           when '#'
             if quotes.none?
-              str << @current_char
-            elsif last_whitespace
               skip_comment
               break
             else
